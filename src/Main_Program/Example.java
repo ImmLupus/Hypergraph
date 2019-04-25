@@ -16,6 +16,8 @@ public class Example extends Frame {
 		// setLayout(new GridLayout(1, 5));
 		// setLayout(new FlowLayout());
 		setLayout(null);
+		setTitle("Hypergraph!");
+		setResizable(false);
 
 		Button b = new Button("Button");
 		b.setBounds(50, 70, 50, 20);
@@ -43,8 +45,10 @@ public class Example extends Frame {
 		TextField tf = new TextField("");
 		tf.setBounds(50, 100, 100, 20);
 		add(tf);
+		
+		
 
-		setSize(400, 200);
+		setSize(550, 600);
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
@@ -61,10 +65,10 @@ public class Example extends Frame {
 			}
 
 		});
-		
-		Graphics g = getGraphics();
-	    g.drawImage(new ImageIcon("image.jpg").getImage(), 0, 0, 300, 300, null);
 
+		Graphics g = getGraphics();
+	    g.drawImage(new ImageIcon("hyper.jpg").getImage(), 90, 70, null);
+		
 	}
 
 	public static void main(String[] args) {
