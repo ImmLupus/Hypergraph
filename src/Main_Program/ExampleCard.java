@@ -1,23 +1,30 @@
 package Main_Program;
 
-import java.awt.EventQueue;
-
-import javax.swing.JFrame;
 import java.awt.CardLayout;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JComboBox;
-import java.awt.Color;
-import javax.swing.JButton;
-
+import java.awt.EventQueue;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.JTextArea;
+
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
+
 
 public class ExampleCard {
+	
+	public class Pic{
+		private JFrame frame;
+		
+		Pic(){
+			frame = new JFrame();
+			frame.setBounds(100, 100, 450, 300);
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.getContentPane().setLayout(null);
+		}
+	}
 
 	private JFrame frame;
 
@@ -42,6 +49,8 @@ public class ExampleCard {
 	 */
 	public ExampleCard() {
 		initialize();
+		Pic window2 = new Pic();
+		window2.frame.setVisible(true);
 	}
 
 	/**
@@ -66,6 +75,10 @@ public class ExampleCard {
 		label.setBounds(126, 72, 125, 20);
 		panel_1.add(label);
 		
+		JRadioButtonMenuItem rdbtnmntmFgdf = new JRadioButtonMenuItem("fgdf");
+		rdbtnmntmFgdf.setBounds(0, 108, 173, 31);
+		panel_1.add(rdbtnmntmFgdf);
+		
 		JPanel panel_2 = new JPanel();
 		panel.add(panel_2, "Проверка");
 		panel_2.setLayout(null);
@@ -76,7 +89,7 @@ public class ExampleCard {
 		
 		JComboBox comboBox = new JComboBox();
 		comboBox.setModel(new DefaultComboBoxModel(new String[] {"Генерация", "Проверка"}));
-		comboBox.setBounds(151, 0, 109, 26);
+		comboBox.setBounds(289, 0, 109, 26);
 		frame.getContentPane().add(comboBox);
 		comboBox.addItemListener(new ItemListener() {
 			

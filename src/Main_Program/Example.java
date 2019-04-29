@@ -7,6 +7,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
 import javax.swing.SwingConstants;
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
@@ -45,6 +46,9 @@ public class Example extends Frame {
 		TextField tf = new TextField("");
 		tf.setBounds(50, 100, 100, 20);
 		add(tf);
+		
+		ButtonGroup BG = new ButtonGroup();
+		
 		
 		
 
