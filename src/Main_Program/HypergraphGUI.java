@@ -304,6 +304,12 @@ public class HypergraphGUI {
 				vseLR.clear();
 				vseI.clear();
 				resultVec.clear();
+				resultI.clear();
+				resultLR.clear();
+				max.clear();
+				min.clear();
+				
+				
 				try {
 					XSSFWorkbook wb = new XSSFWorkbook(new File("input.xlsx"));
 					XSSFSheet sheet = wb.getSheet("Sheet1");
@@ -366,6 +372,8 @@ public class HypergraphGUI {
 		button_1.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		button_1.setBounds(15, 16, 215, 29);
 		panel_2.add(button_1);
+		progressBar.setStringPainted(true);
+		progressBar.setToolTipText("");
 
 		progressBar.setBounds(168, 61, 374, 29);
 		panel_2.add(progressBar);
@@ -471,6 +479,7 @@ public class HypergraphGUI {
 		protected void process(List<Integer> chunks) {
 			int i = chunks.get(chunks.size() - 1);
 			pb.setValue(i);
+			//pb.setString(i+"%");
 		}
 
 		@Override
@@ -543,43 +552,71 @@ public class HypergraphGUI {
 		protected void done() {
 			super.done();
 			pb.setValue(100);
-			int max_i = 0;
-			double max_mid = 0;
+			ArrayList<Double> middle = new ArrayList<Double>();
 
 			String s0 = "Релевантный набор по свертке:\n\n";
 			String s1 = "Релевантный набор по Арбитражной схеме Нэша\nв качестве статуса-кво - свертка:\n\n";
 			String s = "";
 
-			for (int j = 0; j < resultVec.size(); j++) { // Заполнение текста в всех векторов
-				double middle = 0;
+					//                      Заполнение текста во всех векторах
+			for (int j = 0; j < resultVec.size(); j++) {		//Расчет значений сверток 
+				double temp_mid=0;
 				for (int i = 0; i < K; i++) {
-					s += resultVec.get(j).get(i) + " ";
-					middle += (double) (resultVec.get(j).get(i) - min.get(i)) / (double) (max.get(i) - min.get(i));
+					temp_mid += (double) (resultVec.get(j).get(i) - min.get(i)) / (double) (max.get(i) - min.get(i));
 				}
-				s += "  -> " + String.format("%.4f", middle);
-				s += "\n\n";
-				if (middle > max_mid) {
-					max_mid = middle;
-					max_i = j;
+				middle.add(temp_mid);
+			}
+			ArrayList<Integer>temp_al = new  ArrayList<Integer>();
+			double temp_d;
+			for (int i=0; i<resultVec.size()-1; i++) {		//Сортировка несравнимых векторов по значению свертки
+				for (int j=i+1; j<resultVec.size(); j++) {
+					if (middle.get(j)>middle.get(i)) {
+						temp_d=middle.get(j);
+						middle.set(j,middle.get(i));
+						middle.set(i,temp_d);
+						
+						temp_al.clear();
+						temp_al.addAll(resultVec.get(j));
+						resultVec.set(j,new ArrayList<Integer>(resultVec.get(i)));
+						resultVec.set(i,new ArrayList<Integer>(temp_al));
+						
+						temp_al.clear();
+						temp_al.addAll(resultLR.get(j));
+						resultLR.set(j,new ArrayList<Integer>(resultLR.get(i)));
+						resultLR.set(i,new ArrayList<Integer>(temp_al));
+						
+						temp_al.clear();
+						temp_al.addAll(resultI.get(j));
+						resultI.set(j,new ArrayList<Integer>(resultI.get(i)));
+						resultI.set(i,new ArrayList<Integer>(temp_al));
+					}
 				}
 			}
+			
+			for (int j = 0; j < resultVec.size(); j++) {	//Добавление информации о всех несравнимых векторах
+				for (int i = 0; i < K; i++) {
+					s += resultVec.get(j).get(i) + " ";
+				}
+				s += "  -> " + String.format("%.4f", middle.get(j));
+				s += "\n\n";
+			}
 
-			for (int q = 0; q < LR; q++) {
-				s0 += ((q + 1) + "  " + (resultLR.get(max_i).get(q) + 1) + "  " + (resultI.get(max_i).get(q) + 1));
+			for (int q = 0; q < LR; q++) {		//Добавление информации о свертке
+				s0 += ((q + 1) + "  " + (resultLR.get(0).get(q) + 1) + "  " + (resultI.get(0).get(q) + 1));
 				s0 += "\n";
 			}
 			s0 += ("-------------------\r\n");
-			for (int c : resultVec.get(max_i))
+			for (int c : resultVec.get(0))
 				s0 += (c + " ");
-			s0 += " -> " + String.format("%.4f", max_mid);
+			s0 += " -> " + String.format("%.4f", middle.get(0));
 			s0 += "\n\n=============================\n";
 
 			int nesh = 0, nesh_i=0;			//Функция Нэша
 			for (int i = 0; i < resultVec.size(); i++) {
 				int sh = 1;
 				for (int k = 0; k < K; k++) {
-					if (resultVec.get(i).get(k) > resultVec.get(max_i).get(k))
-						sh *= resultVec.get(i).get(k) - resultVec.get(max_i).get(k);
+					if (resultVec.get(i).get(k) > resultVec.get(0).get(k))
+						sh *= resultVec.get(i).get(k) - resultVec.get(0).get(k);
 				}
 				if (sh>nesh) {
 					nesh=sh;
