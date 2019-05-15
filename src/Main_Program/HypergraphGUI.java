@@ -17,7 +17,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -69,6 +71,7 @@ public class HypergraphGUI {
 	static int I;
 	static ArrayList<Integer> Ii = new ArrayList<Integer>();
 	JProgressBar progressBar = new JProgressBar();
+	JLabel lblNewLabel_2;
 	static ArrayList<ArrayList<Integer>> vseLR = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<ArrayList<Integer>> vseI = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<ArrayList<Integer>> resultVec = new ArrayList<ArrayList<Integer>>();
@@ -112,10 +115,9 @@ public class HypergraphGUI {
 
 		frmHyperph = new JFrame();
 		frmHyperph.setTitle("Hypergraph!");
-		frmHyperph.setIconImage(Toolkit.getDefaultToolkit()
-				.getImage("icon.png"));
+		frmHyperph.setIconImage(Toolkit.getDefaultToolkit().getImage("icon.png"));
 		frmHyperph.setResizable(false);
-		frmHyperph.setBounds(100, 100, 563, 688);
+		frmHyperph.setBounds(100, 100, 563, 683);
 		frmHyperph.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmHyperph.getContentPane().setLayout(null);
 
@@ -287,7 +289,7 @@ public class HypergraphGUI {
 				difLR(b, new ArrayList<Integer>(), LR);
 				difI(a, new ArrayList<Integer>(), LR);
 
-				new Processing(progressBar, textArea).execute();
+				new Processing(progressBar, textArea, lblNewLabel_2).execute();
 			}
 		});
 		btnNewButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
@@ -306,8 +308,7 @@ public class HypergraphGUI {
 				resultLR.clear();
 				max.clear();
 				min.clear();
-				
-				
+
 				try {
 					XSSFWorkbook wb = new XSSFWorkbook(new File("input.xlsx"));
 					XSSFSheet sheet = wb.getSheet("Sheet1");
@@ -372,12 +373,18 @@ public class HypergraphGUI {
 		panel_2.add(button_1);
 		progressBar.setStringPainted(true);
 		progressBar.setToolTipText("");
+		progressBar.setMaximum(10000);
 
 		progressBar.setBounds(168, 61, 374, 29);
 		panel_2.add(progressBar);
 
 		textArea.setBounds(15, 96, 532, 509);
 		panel_2.add(textArea);
+
+		lblNewLabel_2 = new JLabel("00:00");
+		lblNewLabel_2.setFont(new Font("Tahoma", Font.PLAIN, 17));
+		lblNewLabel_2.setBounds(447, 17, 77, 29);
+		panel_2.add(lblNewLabel_2);
 
 		ButtonGroup BG = new ButtonGroup();
 
@@ -467,17 +474,47 @@ public class HypergraphGUI {
 
 		JProgressBar pb;
 		TextArea textArea;
+		JLabel lblNewLabel_2;
+		Date this_date = new Date();
+		int old_i = 0;
+		ArrayList<BigInteger> al_bi = new ArrayList<BigInteger>();
 
-		public Processing(JProgressBar pb, TextArea textArea) {
+		public Processing(JProgressBar pb, TextArea textArea, JLabel lblNewLabel_2) {
 			this.pb = pb;
 			this.textArea = textArea;
+			this.lblNewLabel_2 = lblNewLabel_2;
 		}
 
 		@Override
 		protected void process(List<Integer> chunks) {
 			int i = chunks.get(chunks.size() - 1);
 			pb.setValue(i);
-			//pb.setString(i+"%");
+
+			if (i != old_i && i != 0) {
+				Date date = new Date();
+				date.setTime(date.getTime() - this_date.getTime());
+				BigInteger bi_i = BigInteger.valueOf(i);
+				BigInteger bi_lr = BigInteger.valueOf(10000);
+				BigInteger bi_date = BigInteger.valueOf(date.getTime());
+				BigInteger sr_bi = BigInteger.ZERO;
+
+				BigInteger bi = bi_lr.multiply(bi_date);
+				bi = bi.divide(bi_i);
+				
+				/*if (al_bi.size() < 1300)		//Апроксимирующий таймер
+					al_bi.add(bi);
+				for (BigInteger c : al_bi)
+					sr_bi = sr_bi.add(c);
+				if (al_bi.size() >= 1300)
+					bi = sr_bi.divide(BigInteger.valueOf(al_bi.size())).add(bi).divide(BigInteger.valueOf(2));
+				else
+					bi = sr_bi.divide(BigInteger.valueOf(al_bi.size()));*/
+
+				bi = bi.subtract(bi_date);
+				lblNewLabel_2.setText(
+						(new Date(bi.longValue()).getMinutes()) + " : " + (new Date(bi.longValue()).getSeconds()));
+			}
+			old_i = i;
 		}
 
 		@Override
@@ -492,7 +529,7 @@ public class HypergraphGUI {
 			}
 
 			for (int i = 0; i < vseLR.size(); i++) {
-				publish(i * 100 / vseLR.size());
+				publish(i * 10000 / vseLR.size());
 				for (int j = 0; j < vseI.size(); j++) {
 					vec.clear();
 					for (int k = 0; k < K; k++) {
@@ -556,42 +593,42 @@ public class HypergraphGUI {
 			String s1 = "Релевантный набор по Арбитражной схеме Нэша\nв качестве статуса-кво - свертка:\n\n";
 			String s = "";
 
-					//                      Заполнение текста во всех векторах
-			for (int j = 0; j < resultVec.size(); j++) {		//Расчет значений сверток 
-				double temp_mid=0;
+			// Заполнение текста во всех векторах
+			for (int j = 0; j < resultVec.size(); j++) { // Расчет значений сверток
+				double temp_mid = 0;
 				for (int i = 0; i < K; i++) {
 					temp_mid += (double) (resultVec.get(j).get(i) - min.get(i)) / (double) (max.get(i) - min.get(i));
 				}
 				middle.add(temp_mid);
 			}
-			ArrayList<Integer>temp_al = new  ArrayList<Integer>();
+			ArrayList<Integer> temp_al = new ArrayList<Integer>();
 			double temp_d;
-			for (int i=0; i<resultVec.size()-1; i++) {		//Сортировка несравнимых векторов по значению свертки
-				for (int j=i+1; j<resultVec.size(); j++) {
-					if (middle.get(j)>middle.get(i)) {
-						temp_d=middle.get(j);
-						middle.set(j,middle.get(i));
-						middle.set(i,temp_d);
-						
+			for (int i = 0; i < resultVec.size() - 1; i++) { // Сортировка несравнимых векторов по значению свертки
+				for (int j = i + 1; j < resultVec.size(); j++) {
+					if (middle.get(j) > middle.get(i)) {
+						temp_d = middle.get(j);
+						middle.set(j, middle.get(i));
+						middle.set(i, temp_d);
+
 						temp_al.clear();
 						temp_al.addAll(resultVec.get(j));
-						resultVec.set(j,new ArrayList<Integer>(resultVec.get(i)));
-						resultVec.set(i,new ArrayList<Integer>(temp_al));
-						
+						resultVec.set(j, new ArrayList<Integer>(resultVec.get(i)));
+						resultVec.set(i, new ArrayList<Integer>(temp_al));
+
 						temp_al.clear();
 						temp_al.addAll(resultLR.get(j));
-						resultLR.set(j,new ArrayList<Integer>(resultLR.get(i)));
-						resultLR.set(i,new ArrayList<Integer>(temp_al));
-						
+						resultLR.set(j, new ArrayList<Integer>(resultLR.get(i)));
+						resultLR.set(i, new ArrayList<Integer>(temp_al));
+
 						temp_al.clear();
 						temp_al.addAll(resultI.get(j));
-						resultI.set(j,new ArrayList<Integer>(resultI.get(i)));
-						resultI.set(i,new ArrayList<Integer>(temp_al));
+						resultI.set(j, new ArrayList<Integer>(resultI.get(i)));
+						resultI.set(i, new ArrayList<Integer>(temp_al));
 					}
 				}
 			}
-			
-			for (int j = 0; j < resultVec.size(); j++) {	//Добавление информации о всех несравнимых векторах
+
+			for (int j = 0; j < resultVec.size(); j++) { // Добавление информации о всех несравнимых векторах
 				for (int i = 0; i < K; i++) {
 					s += resultVec.get(j).get(i) + " ";
 				}
@@ -599,7 +636,7 @@ public class HypergraphGUI {
 				s += "\n\n";
 			}
 
-			for (int q = 0; q < LR; q++) {		//Добавление информации о свертке
+			for (int q = 0; q < LR; q++) { // Добавление информации о свертке
 				s0 += ((q + 1) + "  " + (resultLR.get(0).get(q) + 1) + "  " + (resultI.get(0).get(q) + 1));
 				s0 += "\n";
 			}
@@ -609,16 +646,16 @@ public class HypergraphGUI {
 			s0 += " -> " + String.format("%.4f", middle.get(0));
 			s0 += "\n\n=============================\n";
 
-			int nesh = 0, nesh_i=0;			//Функция Нэша
+			int nesh = 0, nesh_i = 0; // Функция Нэша
 			for (int i = 0; i < resultVec.size(); i++) {
 				int sh = 1;
 				for (int k = 0; k < K; k++) {
 					if (resultVec.get(i).get(k) > resultVec.get(0).get(k))
 						sh *= resultVec.get(i).get(k) - resultVec.get(0).get(k);
 				}
-				if (sh>nesh) {
-					nesh=sh;
-					nesh_i=i;
+				if (sh > nesh) {
+					nesh = sh;
+					nesh_i = i;
 				}
 			}
 			for (int q = 0; q < LR; q++) {
@@ -630,9 +667,9 @@ public class HypergraphGUI {
 				s1 += (c + " ");
 			s1 += " -> " + nesh;
 			s1 += "\n\n=============================\n";
-			
-			textArea.setText(s0+ s1 + s);
-			
+
+			textArea.setText(s0 + s1 + s);
+
 			try (FileWriter fw = new FileWriter("output.txt")) { // Запись в файл
 				for (int i = 0; i < resultVec.size(); i++) {
 					for (int q = 0; q < LR; q++) {
