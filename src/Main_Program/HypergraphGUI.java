@@ -76,6 +76,8 @@ public class HypergraphGUI {
 	static ArrayList<ArrayList<Integer>> resultVec = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<ArrayList<Integer>> resultLR = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<ArrayList<Integer>> resultI = new ArrayList<ArrayList<Integer>>();
+	static ArrayList<Integer> max = new ArrayList<Integer>();
+	static ArrayList<Integer> min = new ArrayList<Integer>();
 
 	/**
 	 * Launch the application.
@@ -477,6 +479,11 @@ public class HypergraphGUI {
 			boolean more, less, add;
 			ArrayList<Integer> vec = new ArrayList<Integer>();
 
+			for (int i = 0; i < K; i++) {
+				max.add(0);
+				min.add(Integer.MAX_VALUE);
+			}
+
 			for (int i = 0; i < vseLR.size(); i++) {
 				publish(i * 100 / vseLR.size());
 				for (int j = 0; j < vseI.size(); j++) {
@@ -486,6 +493,10 @@ public class HypergraphGUI {
 						for (int t = 0; t < LR; t++) {
 							count += data.get(k).get(t).get(vseLR.get(i).get(t)).get(vseI.get(j).get(t));
 						}
+						if (count < min.get(k))
+							min.set(k, count);
+						if (count > max.get(k))
+							max.set(k, count);
 						vec.add(count);
 					}
 					if (!resultVec.isEmpty()) { // Расчет несравнимых векторов
@@ -532,17 +543,37 @@ public class HypergraphGUI {
 		protected void done() {
 			super.done();
 			pb.setValue(100);
+			int max_i=0;
+			double max_mid=0;
 
-			String s = "";
-			for (ArrayList<Integer> q : resultVec) {
-				for (int c : q)
-					s += c + " ";
+			String s0 = "Релевантный набор по свертке:\n\n";
+			String s="";
+			
+			for (int j = 0; j < resultVec.size(); j++) {	//Заполнение текста в всех векторов
+				double middle = 0;
+				for (int i = 0; i < K; i++) {
+					s += resultVec.get(j).get(i) + " ";
+					middle += (double) (resultVec.get(j).get(i) - min.get(i)) / (double) (max.get(i) - min.get(i));
+				}
+				s += "  -> " + String.format("%.4f", middle);
 				s += "\n\n";
+				if (middle>max_mid) {max_mid=middle; max_i=j;}
 			}
-			textArea.setText(s);
+			
+				for (int q = 0; q < LR; q++) {
+					s0+=((q + 1) + "  " + (resultLR.get(max_i).get(q) + 1) + "  " + (resultI.get(max_i).get(q) + 1));
+					s0+="\n";
+				}
+				s0+=("-------------------\r\n");
+				for (int c : resultVec.get(max_i))
+					s0+=(c + " ");
+				s0+=" -> "+String.format("%.4f", max_mid);
+				s0+="\n\n=============================\n";
+			
+			textArea.setText(s0+s);
 
-			try (FileWriter fw = new FileWriter("output.txt")) {
-				for (int i = 0; i < resultLR.size(); i++) {
+			try (FileWriter fw = new FileWriter("output.txt")) { // Запись в файл
+				for (int i = 0; i < resultVec.size(); i++) {
 					for (int q = 0; q < LR; q++) {
 						fw.write((q + 1) + " " + (resultLR.get(i).get(q) + 1) + " " + (resultI.get(i).get(q) + 1));
 						fw.write("\r\n");
@@ -550,10 +581,8 @@ public class HypergraphGUI {
 					fw.write("-------------------\r\n");
 					for (int c : resultVec.get(i))
 						fw.write(c + " ");
-					fw.write("\r\n");
-					fw.write("\r\n");
+					fw.write("\r\n===================\r\n\r\n");
 				}
-				fw.flush();
 				fw.close();
 			} catch (IOException e) {
 				System.out.println(e.getMessage());
