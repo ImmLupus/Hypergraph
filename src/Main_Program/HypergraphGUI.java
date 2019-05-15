@@ -5,6 +5,7 @@ import java.awt.Checkbox;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.TextArea;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,7 +17,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,8 +36,6 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import javax.swing.JTextArea;
-import java.awt.TextArea;
 
 public class HypergraphGUI {
 
@@ -53,7 +51,7 @@ public class HypergraphGUI {
 
 			JLabel label_5 = new JLabel();
 			frame.getContentPane().add(label_5);
-			label_5.setIcon(new ImageIcon("C:\\Users\\USER\\Desktop\\Eclipse-worksplace\\git\\Hypergraph\\hyper.jpg"));
+			label_5.setIcon(new ImageIcon("hyper.jpg"));
 			label_5.setBounds(0, 0, 380, 294);
 		}
 	}
@@ -115,7 +113,7 @@ public class HypergraphGUI {
 		frmHyperph = new JFrame();
 		frmHyperph.setTitle("Hypergraph!");
 		frmHyperph.setIconImage(Toolkit.getDefaultToolkit()
-				.getImage("C:\\Users\\USER\\Desktop\\Eclipse-worksplace\\git\\Hypergraph\\icon.png"));
+				.getImage("icon.png"));
 		frmHyperph.setResizable(false);
 		frmHyperph.setBounds(100, 100, 563, 688);
 		frmHyperph.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
