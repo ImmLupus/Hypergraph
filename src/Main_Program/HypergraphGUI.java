@@ -543,13 +543,14 @@ public class HypergraphGUI {
 		protected void done() {
 			super.done();
 			pb.setValue(100);
-			int max_i=0;
-			double max_mid=0;
+			int max_i = 0;
+			double max_mid = 0;
 
 			String s0 = "Релевантный набор по свертке:\n\n";
-			String s="";
-			
-			for (int j = 0; j < resultVec.size(); j++) {	//Заполнение текста в всех векторов
+			String s1 = "Релевантный набор по Арбитражной схеме Нэша\nв качестве статуса-кво - свертка:\n\n";
+			String s = "";
+
+			for (int j = 0; j < resultVec.size(); j++) { // Заполнение текста в всех векторов
 				double middle = 0;
 				for (int i = 0; i < K; i++) {
 					s += resultVec.get(j).get(i) + " ";
@@ -557,21 +558,46 @@ public class HypergraphGUI {
 				}
 				s += "  -> " + String.format("%.4f", middle);
 				s += "\n\n";
-				if (middle>max_mid) {max_mid=middle; max_i=j;}
-			}
-			
-				for (int q = 0; q < LR; q++) {
-					s0+=((q + 1) + "  " + (resultLR.get(max_i).get(q) + 1) + "  " + (resultI.get(max_i).get(q) + 1));
-					s0+="\n";
+				if (middle > max_mid) {
+					max_mid = middle;
+					max_i = j;
 				}
-				s0+=("-------------------\r\n");
-				for (int c : resultVec.get(max_i))
-					s0+=(c + " ");
-				s0+=" -> "+String.format("%.4f", max_mid);
-				s0+="\n\n=============================\n";
-			
-			textArea.setText(s0+s);
+			}
 
+			for (int q = 0; q < LR; q++) {
+				s0 += ((q + 1) + "  " + (resultLR.get(max_i).get(q) + 1) + "  " + (resultI.get(max_i).get(q) + 1));
+				s0 += "\n";
+			}
+			s0 += ("-------------------\r\n");
+			for (int c : resultVec.get(max_i))
+				s0 += (c + " ");
+			s0 += " -> " + String.format("%.4f", max_mid);
+			s0 += "\n\n=============================\n";
+
+			int nesh = 0, nesh_i=0;			//Функция Нэша
+			for (int i = 0; i < resultVec.size(); i++) {
+				int sh = 1;
+				for (int k = 0; k < K; k++) {
+					if (resultVec.get(i).get(k) > resultVec.get(max_i).get(k))
+						sh *= resultVec.get(i).get(k) - resultVec.get(max_i).get(k);
+				}
+				if (sh>nesh) {
+					nesh=sh;
+					nesh_i=i;
+				}
+			}
+			for (int q = 0; q < LR; q++) {
+				s1 += ((q + 1) + "  " + (resultLR.get(nesh_i).get(q) + 1) + "  " + (resultI.get(nesh_i).get(q) + 1));
+				s1 += "\n";
+			}
+			s1 += ("-------------------\r\n");
+			for (int c : resultVec.get(nesh_i))
+				s1 += (c + " ");
+			s1 += " -> " + nesh;
+			s1 += "\n\n=============================\n";
+			
+			textArea.setText(s0+ s1 + s);
+			
 			try (FileWriter fw = new FileWriter("output.txt")) { // Запись в файл
 				for (int i = 0; i < resultVec.size(); i++) {
 					for (int q = 0; q < LR; q++) {
