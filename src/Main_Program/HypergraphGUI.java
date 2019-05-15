@@ -14,9 +14,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
@@ -25,13 +27,17 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import javax.swing.JTextArea;
+import java.awt.TextArea;
 
 public class HypergraphGUI {
 
@@ -59,13 +65,17 @@ public class HypergraphGUI {
 	private JTextField textField_3;
 	JLabel lblNewLabel;
 	JLabel lblNewLabel_1;
-	ArrayList<ArrayList<ArrayList<ArrayList<Integer>>>> data;
-	private JTextField textField_4;
-	int K;
-	int LR;
-	int I;
-	BigInteger count = BigInteger.valueOf(0);
-	ArrayList<Integer> Ii = new ArrayList<Integer>();
+	static ArrayList<ArrayList<ArrayList<ArrayList<Integer>>>> data;
+	static int K;
+	static int LR;
+	static int I;
+	static ArrayList<Integer> Ii = new ArrayList<Integer>();
+	JProgressBar progressBar = new JProgressBar();
+	static ArrayList<ArrayList<Integer>> vseLR = new ArrayList<ArrayList<Integer>>();
+	static ArrayList<ArrayList<Integer>> vseI = new ArrayList<ArrayList<Integer>>();
+	static ArrayList<ArrayList<Integer>> resultVec = new ArrayList<ArrayList<Integer>>();
+	static ArrayList<ArrayList<Integer>> resultLR = new ArrayList<ArrayList<Integer>>();
+	static ArrayList<ArrayList<Integer>> resultI = new ArrayList<ArrayList<Integer>>();
 
 	/**
 	 * Launch the application.
@@ -96,10 +106,12 @@ public class HypergraphGUI {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		JButton btnNewButton = new JButton("Вычеслить сложность");
-		
+		JButton btnNewButton = new JButton("Вычислить");
+		TextArea textArea = new TextArea();
+		textArea.setFont(new Font("Dialog", Font.PLAIN, 18));
+
 		frmHyperph = new JFrame();
-		frmHyperph.setTitle("Hyperaph!");
+		frmHyperph.setTitle("Hypergraph!");
 		frmHyperph.setIconImage(Toolkit.getDefaultToolkit()
 				.getImage("C:\\Users\\USER\\Desktop\\Eclipse-worksplace\\git\\Hypergraph\\icon.png"));
 		frmHyperph.setResizable(false);
@@ -174,7 +186,7 @@ public class HypergraphGUI {
 		JButton button = new JButton("Сгенерировать шаблон EXCEL");
 		button.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseReleased(MouseEvent arg0) {
+			public void mouseReleased(MouseEvent arg0) { // Создания шаблона в excel
 				int _K = Integer.parseInt(textField.getText());
 				int _LR = Integer.parseInt(textField_1.getText());
 				int _I = Integer.parseInt(textField_2.getText());
@@ -205,7 +217,7 @@ public class HypergraphGUI {
 				cell.setCellValue("Размерность вершин I[i] (через запятую):");
 				cell = row.createCell(1);
 				cell.setCellValue(_Ii);
-				btnNewButton.setEnabled(false);
+
 				for (int i = 0, k = 1; k <= _K; i += 3, k++) {
 					XSSFRow row2 = sheet.createRow(4 + i + 1);
 					XSSFCell cell2 = row2.createCell(0);
@@ -236,6 +248,7 @@ public class HypergraphGUI {
 					lblNewLabel.setText("Готово!");
 					lblNewLabel.setForeground(new Color(34, 139, 34));
 					lblNewLabel.setVisible(true);
+					btnNewButton.setEnabled(false);
 				} catch (Exception e) {
 					lblNewLabel.setText("Ошибка!");
 					lblNewLabel.setForeground(new Color(255, 0, 0));
@@ -264,31 +277,31 @@ public class HypergraphGUI {
 		panel_2.add(lblNewLabel_1);
 
 		btnNewButton.setEnabled(false);
-		btnNewButton.addActionListener(new ActionListener() {//Высчитать сложность
-
+		btnNewButton.addActionListener(new ActionListener() {// Высчитать сложность
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				count=BigInteger.valueOf(0);
-				recCount(new ArrayList<Integer>(Ii), new ArrayList<Integer>(), LR);
-				BigInteger N = fact(BigInteger.valueOf(LR));
-				N = N.multiply(count);
-				textField_4.setText(N.toString());
+				ArrayList<Integer> b = new ArrayList<Integer>();
+				ArrayList<Integer> a = new ArrayList<Integer>(Ii);
+				for (int i = 0; i < LR; i++)
+					b.add(1);
+				difLR(b, new ArrayList<Integer>(), LR);
+				difI(a, new ArrayList<Integer>(), LR);
+
+				new Processing(progressBar, textArea).execute();
 			}
 		});
 		btnNewButton.setFont(new Font("Tahoma", Font.PLAIN, 20));
-		btnNewButton.setBounds(15, 61, 243, 29);
+		btnNewButton.setBounds(15, 61, 138, 29);
 		panel_2.add(btnNewButton);
-
-		textField_4 = new JTextField();
-		textField_4.setFont(new Font("Tahoma", Font.PLAIN, 18));
-		textField_4.setBounds(273, 63, 269, 26);
-		panel_2.add(textField_4);
-		textField_4.setColumns(10);
 
 		JButton button_1 = new JButton("Прочитать данные");
 		button_1.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseReleased(MouseEvent arg0) {// Парсинг данных
+				progressBar.setValue(0);
+				vseLR.clear();
+				vseI.clear();
+				resultVec.clear();
 				try {
 					XSSFWorkbook wb = new XSSFWorkbook(new File("input.xlsx"));
 					XSSFSheet sheet = wb.getSheet("Sheet1");
@@ -352,6 +365,12 @@ public class HypergraphGUI {
 		button_1.setBounds(15, 16, 215, 29);
 		panel_2.add(button_1);
 
+		progressBar.setBounds(168, 61, 374, 29);
+		panel_2.add(progressBar);
+
+		textArea.setBounds(15, 96, 532, 509);
+		panel_2.add(textArea);
+
 		ButtonGroup BG = new ButtonGroup();
 
 		JRadioButtonMenuItem radioButtonMenuItem_1 = new JRadioButtonMenuItem("Работа");
@@ -396,7 +415,26 @@ public class HypergraphGUI {
 		}
 	}
 
-	void recCount(ArrayList<Integer> a, ArrayList<Integer> v, int k) {
+	void difLR(ArrayList<Integer> b, ArrayList<Integer> v, int k) {
+		ArrayList<Integer> tempB = new ArrayList<Integer>(b);
+		ArrayList<Integer> tempV = new ArrayList<Integer>(v);
+		if (k > 0) {
+			for (int i = 0; i < LR; i++) {
+				if (b.get(i) == 1) {
+					tempB.set(i, 0);
+					tempV.add(i);
+					difLR(tempB, tempV, k - 1);
+					tempB.clear();
+					tempB.addAll(b);
+					tempV.clear();
+					tempV.addAll(v);
+				}
+			}
+		} else
+			vseLR.add(new ArrayList<Integer>(v));
+	}
+
+	void difI(ArrayList<Integer> a, ArrayList<Integer> v, int k) {
 		ArrayList<Integer> tempA = new ArrayList<Integer>(a);
 		ArrayList<Integer> tempV = new ArrayList<Integer>(v);
 
@@ -405,7 +443,7 @@ public class HypergraphGUI {
 				if (a.get(i) > 0) {
 					tempA.set(i, tempA.get(i) - 1);
 					tempV.add(i);
-					recCount(tempA, tempV, k - 1);
+					difI(tempA, tempV, k - 1);
 					tempA.clear();
 					tempA.addAll(a);
 					tempV.clear();
@@ -413,17 +451,113 @@ public class HypergraphGUI {
 				}
 			}
 		} else {
-			count = count.add(BigInteger.valueOf(1));
-			return;
+			vseI.add(new ArrayList<Integer>(v));
 		}
-		return;
 	}
 
-	BigInteger fact(BigInteger x) {
-		if (!x.equals(BigInteger.valueOf(0))) {
-			return x.multiply(fact(x.subtract(BigInteger.valueOf(1))));
-		} else
-			return BigInteger.valueOf(1);
-	}
+	static class Processing extends SwingWorker<Void, Integer> {
 
+		JProgressBar pb;
+		TextArea textArea;
+
+		public Processing(JProgressBar pb, TextArea textArea) {
+			this.pb = pb;
+			this.textArea = textArea;
+		}
+
+		@Override
+		protected void process(List<Integer> chunks) {
+			int i = chunks.get(chunks.size() - 1);
+			pb.setValue(i);
+		}
+
+		@Override
+		protected Void doInBackground() throws Exception {
+
+			boolean more, less, add;
+			ArrayList<Integer> vec = new ArrayList<Integer>();
+
+			for (int i = 0; i < vseLR.size(); i++) {
+				publish(i * 100 / vseLR.size());
+				for (int j = 0; j < vseI.size(); j++) {
+					vec.clear();
+					for (int k = 0; k < K; k++) {
+						int count = 0;
+						for (int t = 0; t < LR; t++) {
+							count += data.get(k).get(t).get(vseLR.get(i).get(t)).get(vseI.get(j).get(t));
+						}
+						vec.add(count);
+					}
+					if (!resultVec.isEmpty()) { // Расчет несравнимых векторов
+						add = true;
+						for (int q = 0; q < resultVec.size(); q++) {
+							more = false;
+							less = false;
+
+							for (int t = 0; t < K; t++) {
+								if (vec.get(t) >= resultVec.get(q).get(t)) {
+									more = true;
+								} else
+									less = true;
+							}
+
+							if (more == false && less == true) {
+								add = false;
+								break;
+							} else if (more == true && less == false) {
+								resultVec.remove(q);
+								resultLR.remove(q);
+								resultI.remove(q);
+								q--;
+							}
+
+						}
+
+						if (add == true) {
+							resultVec.add(new ArrayList<Integer>(vec));
+							resultLR.add(new ArrayList<Integer>(vseLR.get(i)));
+							resultI.add(new ArrayList<Integer>(vseI.get(j)));
+						}
+					} else {
+						resultVec.add(new ArrayList<Integer>(vec));
+						resultLR.add(new ArrayList<Integer>(vseLR.get(i)));
+						resultI.add(new ArrayList<Integer>(vseI.get(j)));
+					}
+				}
+			}
+			return null;
+		}
+
+		@Override
+		protected void done() {
+			super.done();
+			pb.setValue(100);
+
+			String s = "";
+			for (ArrayList<Integer> q : resultVec) {
+				for (int c : q)
+					s += c + " ";
+				s += "\n\n";
+			}
+			textArea.setText(s);
+
+			try (FileWriter fw = new FileWriter("output.txt")) {
+				for (int i = 0; i < resultLR.size(); i++) {
+					for (int q = 0; q < LR; q++) {
+						fw.write((q + 1) + " " + (resultLR.get(i).get(q) + 1) + " " + (resultI.get(i).get(q) + 1));
+						fw.write("\r\n");
+					}
+					fw.write("-------------------\r\n");
+					for (int c : resultVec.get(i))
+						fw.write(c + " ");
+					fw.write("\r\n");
+					fw.write("\r\n");
+				}
+				fw.flush();
+				fw.close();
+			} catch (IOException e) {
+				System.out.println(e.getMessage());
+			}
+		}
+	}
 }
