@@ -39,6 +39,8 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.sun.org.apache.bcel.internal.generic.SWAP;
+
 public class HypergraphGUI {
 
 	public class Pic {
@@ -72,13 +74,14 @@ public class HypergraphGUI {
 	static ArrayList<Integer> Ii = new ArrayList<Integer>();
 	JProgressBar progressBar = new JProgressBar();
 	JLabel lblNewLabel_2;
-	static ArrayList<ArrayList<Integer>> vseLR = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<ArrayList<Integer>> vseI = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<ArrayList<Integer>> resultVec = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<ArrayList<Integer>> resultLR = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<ArrayList<Integer>> resultI = new ArrayList<ArrayList<Integer>>();
 	static ArrayList<Integer> max = new ArrayList<Integer>();
 	static ArrayList<Integer> min = new ArrayList<Integer>();
+	
+	static int max_progress = 10000;
 
 	/**
 	 * Launch the application.
@@ -282,11 +285,8 @@ public class HypergraphGUI {
 		btnNewButton.addActionListener(new ActionListener() {// Высчитать сложность
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ArrayList<Integer> b = new ArrayList<Integer>();
 				ArrayList<Integer> a = new ArrayList<Integer>(Ii);
-				for (int i = 0; i < LR; i++)
-					b.add(1);
-				difLR(b, new ArrayList<Integer>(), LR);
+				difLR(LR);
 				difI(a, new ArrayList<Integer>(), LR);
 
 				new Processing(progressBar, textArea, lblNewLabel_2).execute();
@@ -301,7 +301,6 @@ public class HypergraphGUI {
 			@Override
 			public void mouseReleased(MouseEvent arg0) {// Парсинг данных
 				progressBar.setValue(0);
-				vseLR.clear();
 				vseI.clear();
 				resultVec.clear();
 				resultI.clear();
@@ -373,7 +372,7 @@ public class HypergraphGUI {
 		panel_2.add(button_1);
 		progressBar.setStringPainted(true);
 		progressBar.setToolTipText("");
-		progressBar.setMaximum(10000);
+		progressBar.setMaximum(max_progress);
 
 		progressBar.setBounds(168, 61, 374, 29);
 		panel_2.add(progressBar);
@@ -430,23 +429,8 @@ public class HypergraphGUI {
 		}
 	}
 
-	void difLR(ArrayList<Integer> b, ArrayList<Integer> v, int k) {
-		ArrayList<Integer> tempB = new ArrayList<Integer>(b);
-		ArrayList<Integer> tempV = new ArrayList<Integer>(v);
-		if (k > 0) {
-			for (int i = 0; i < LR; i++) {
-				if (b.get(i) == 1) {
-					tempB.set(i, 0);
-					tempV.add(i);
-					difLR(tempB, tempV, k - 1);
-					tempB.clear();
-					tempB.addAll(b);
-					tempV.clear();
-					tempV.addAll(v);
-				}
-			}
-		} else
-			vseLR.add(new ArrayList<Integer>(v));
+	void difLR(int n) {
+		
 	}
 
 	void difI(ArrayList<Integer> a, ArrayList<Integer> v, int k) {
@@ -478,6 +462,11 @@ public class HypergraphGUI {
 		Date this_date = new Date();
 		int old_i = 0;
 		ArrayList<BigInteger> al_bi = new ArrayList<BigInteger>();
+		
+		int fact(int x) {
+			int t[] = { 1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800, 39916800, 479001600, };
+			return t[x];
+		}
 
 		public Processing(JProgressBar pb, TextArea textArea, JLabel lblNewLabel_2) {
 			this.pb = pb;
@@ -494,21 +483,19 @@ public class HypergraphGUI {
 				Date date = new Date();
 				date.setTime(date.getTime() - this_date.getTime());
 				BigInteger bi_i = BigInteger.valueOf(i);
-				BigInteger bi_lr = BigInteger.valueOf(10000);
+				BigInteger bi_lr = BigInteger.valueOf(max_progress);
 				BigInteger bi_date = BigInteger.valueOf(date.getTime());
 				BigInteger sr_bi = BigInteger.ZERO;
 
 				BigInteger bi = bi_lr.multiply(bi_date);
 				bi = bi.divide(bi_i);
-				
-				/*if (al_bi.size() < 1300)		//Апроксимирующий таймер
-					al_bi.add(bi);
-				for (BigInteger c : al_bi)
-					sr_bi = sr_bi.add(c);
-				if (al_bi.size() >= 1300)
-					bi = sr_bi.divide(BigInteger.valueOf(al_bi.size())).add(bi).divide(BigInteger.valueOf(2));
-				else
-					bi = sr_bi.divide(BigInteger.valueOf(al_bi.size()));*/
+
+				/*
+				 * if (al_bi.size() < 1300) //Апроксимирующий таймер al_bi.add(bi); for
+				 * (BigInteger c : al_bi) sr_bi = sr_bi.add(c); if (al_bi.size() >= 1300) bi =
+				 * sr_bi.divide(BigInteger.valueOf(al_bi.size())).add(bi).divide(BigInteger.
+				 * valueOf(2)); else bi = sr_bi.divide(BigInteger.valueOf(al_bi.size()));
+				 */
 
 				bi = bi.subtract(bi_date);
 				lblNewLabel_2.setText(
@@ -519,23 +506,37 @@ public class HypergraphGUI {
 
 		@Override
 		protected Void doInBackground() throws Exception {
-
 			boolean more, less, add;
 			ArrayList<Integer> vec = new ArrayList<Integer>();
+			ArrayList<Integer> temp = new ArrayList<>();
 
 			for (int i = 0; i < K; i++) {
 				max.add(0);
 				min.add(Integer.MAX_VALUE);
 			}
+			
+			int str[] = new int[LR];
+			for (int i = 0; i < LR; i++)
+				str[i] = i;
+			int fact = fact(LR);
+			int swap[] = new int[LR];
+			int a, i, j, m, mm, iter=0;
 
-			for (int i = 0; i < vseLR.size(); i++) {
-				publish(i * 10000 / vseLR.size());
-				for (int j = 0; j < vseI.size(); j++) {
+			for (a = 1; a != fact + 1; a++) {
+				mm = a;
+				m = LR;
+				
+				iter++;
+				temp.clear();
+				for (int c: str) temp.add(c);
+				
+				publish(iter * max_progress / fact(LR));
+				for (int t = 0; t < vseI.size(); t++) {
 					vec.clear();
 					for (int k = 0; k < K; k++) {
 						int count = 0;
-						for (int t = 0; t < LR; t++) {
-							count += data.get(k).get(t).get(vseLR.get(i).get(t)).get(vseI.get(j).get(t));
+						for (int q = 0; q < LR; q++) {
+							count += data.get(k).get(q).get(temp.get(q)).get(vseI.get(q).get(q));
 						}
 						if (count < min.get(k))
 							min.set(k, count);
@@ -549,8 +550,8 @@ public class HypergraphGUI {
 							more = false;
 							less = false;
 
-							for (int t = 0; t < K; t++) {
-								if (vec.get(t) >= resultVec.get(q).get(t)) {
+							for (int k = 0; k < K; k++) {
+								if (vec.get(k) >= resultVec.get(q).get(k)) {
 									more = true;
 								} else
 									less = true;
@@ -570,13 +571,37 @@ public class HypergraphGUI {
 
 						if (add == true) {
 							resultVec.add(new ArrayList<Integer>(vec));
-							resultLR.add(new ArrayList<Integer>(vseLR.get(i)));
-							resultI.add(new ArrayList<Integer>(vseI.get(j)));
+							resultLR.add(new ArrayList<Integer>(temp));
+							resultI.add(new ArrayList<Integer>(vseI.get(t)));
 						}
 					} else {
 						resultVec.add(new ArrayList<Integer>(vec));
-						resultLR.add(new ArrayList<Integer>(vseLR.get(i)));
-						resultI.add(new ArrayList<Integer>(vseI.get(j)));
+						resultLR.add(new ArrayList<Integer>(temp));
+						resultI.add(new ArrayList<Integer>(vseI.get(t)));
+					}
+				}
+
+				while (m > 0) {
+					/* Проверка на делимость по модулю. Уменьшаем m */
+					if (mm % m == 0) {
+						mm /= m--;
+					} else {
+
+						j = 0;
+						/* Обмен и оборот одной части */
+						for (i = LR - m + 1; i <= LR - 1; i++, j++)
+							swap[j] = str[i];
+						swap[j] = '\0';
+
+						for (i = LR - m; i >= 0; i--, j++)
+							swap[j] = str[i];
+						//swap[j] = '\0';
+
+						/* Собираем вместе */
+						for (i = 0; i <= LR - 1; i++)
+							str[i] = swap[i];
+
+						break;
 					}
 				}
 			}
