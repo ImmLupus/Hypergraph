@@ -611,7 +611,7 @@ public class HypergraphGUI {
 		@Override
 		protected void done() {
 			super.done();
-			pb.setValue(100);
+			pb.setValue(max_progress);
 			ArrayList<Double> middle = new ArrayList<Double>();
 
 			String s0 = "Релевантный набор по свертке:\n\n";
